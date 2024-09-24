@@ -1,31 +1,70 @@
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.chrome.options import Options
+from selenium import webdriver
 
-class browser:
-    def __init__(self,URL=''):
-        self.URL=URL
-        self.driver=webdriver.Firefox()
-        self.open()
-    def open(self):
-        self.driver.get(self.URL)
+class Browser:
+    def __init__(self, URL='', locator_type='XPATH', incognito=False, headless=False):
+        self.default_locator_type = {
+            'XPATH': By.XPATH,
+            'CLASS_NAME': By.CLASS_NAME,
+            'ID': By.ID,
+            'CSS_SELECTOR': By.CSS_SELECTOR,
+            'NAME': By.NAME,
+            'TAG_NAME': By.TAG_NAME
+        }[locator_type]  # Asignar el tipo de localización por defecto
         
-    def click(self,xpath,time=10):
+        chrome_options = Options()
+        if incognito:
+            chrome_options.add_argument("--incognito")
+        if headless:
+            chrome_options.add_argument("--headless")
+            chrome_options.add_argument("--disable-gpu")
+            chrome_options.add_argument("--window-size=1920,1080")
         
-        ''''Function that waits a specific time (default 10 seg) for the element (xpath) to be clickeable and then click it'''
-   
-        WebDriverWait(self.driver, time).until(EC.element_to_be_clickable((By.XPATH, xpath))).click()
-    def write(self,texto,xpath,time=10):
-        ''''Function that waits a specific time (default 10 seg) for the element (xpath) to be clickeable and then write on it'''
+        self.driver = webdriver.Chrome(options=chrome_options)
+        self.driver.get(URL)
+        
+    def click(self, locator, time=10, locator_type=None):
+        
+        if locator_type is None:
+            locator_type = self.default_locator_type
+        else:
+            locator_type = self.get_locator_type(locator_type)
+        
+        WebDriverWait(self.driver, time).until(EC.element_to_be_clickable((locator_type, locator))).click()
+        
+    def write(self, texto, locator, time=10, locator_type=None):
+        
+        if locator_type is None:
+            locator_type = self.default_locator_type
+        else:
+            locator_type = self.get_locator_type(locator_type)
+        
+        WebDriverWait(self.driver, time).until(EC.element_to_be_clickable((locator_type, locator))).send_keys(texto)
+        
+    def presence(self, locator, time=10, locator_type=None):
+
+        if locator_type is None:
+            locator_type = self.default_locator_type
+        else:
+            locator_type = self.get_locator_type(locator_type)
+        
+        return WebDriverWait(self.driver, time).until(EC.presence_of_all_elements_located((locator_type, locator)))
+
+    def get_locator_type(self, type_):
+        return {
+            'XPATH': By.XPATH,
+            'CLASS_NAME': By.CLASS_NAME,
+            'ID': By.ID,
+            'CSS_SELECTOR': By.CSS_SELECTOR,
+            'NAME': By.NAME,
+            'TAG_NAME': By.TAG_NAME
+        }[type_]
     
-        WebDriverWait(self.driver, time).until(EC.element_to_be_clickable((By.XPATH, xpath))).send_keys(texto)
-    def presence(self,xpath,time=10):
-        ''''Function that waits a specific time (default 10 seg) for the element (xpath) to be clickeable. This can be used to detect when a page is ready 
-        or to extract data'''
-        return WebDriverWait(self.driver, self.time).until(EC.element_to_be_clickable((By.XPATH, self.xpath)))
+    def get_(self,URL):
+        self.driver.get(URL)
+    
     def close(self):
         self.driver.close()
